@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formation : Au Cœur de l'IA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #1e293b; /* slate-800 */
+            overflow: hidden; /* Empêche le scroll global, on gère par slides */
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Thème et Accents */
+        .text-gradient {
+            background: linear-gradient(135deg, #2563eb, #7c3aed); /* blue-600 to violet-600 */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .bg-gradient-accent {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        }
+
+        /* Gestion des Slides */
+        .slide-container {
+            position: relative;
+            height: calc(100vh - 80px); /* Hauteur moins le footer/header */
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(50px);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            padding: 2rem 4rem;
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+
+        .slide.previous {
+            transform: translateX(-50px);
+        }
+
+        /* Animations personnalisées */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8); /* slate-200 */
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            border-radius: 1.5rem;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        /* Éléments interactifs */
+        .token-badge {
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .token-badge:hover {
+            transform: scale(1.1) translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .attention-word {
+            position: relative;
+            cursor: pointer;
+            border-bottom: 2px dashed #94a3b8;
+            transition: all 0.3s;
+        }
+        
+        .attention-word.active-target {
+            color: #2563eb;
+            font-weight: bold;
+            border-bottom-color: #2563eb;
+            border-bottom-style: solid;
+        }
+
+        .attention-word.related-high { background-color: rgba(59, 130, 246, 0.2); border-radius: 4px; padding: 0 4px;}
+        .attention-word.related-med { background-color: rgba(59, 130, 246, 0.1); border-radius: 4px; padding: 0 4px;}
+
+        /* Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #4f46e5;
+            cursor: pointer;
+            margin-top: -10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 3px;
+        }
+
+        /* Neural Net Animations */
+        .node-active {
+            background-color: #fbbf24 !important; /* amber-400 */
+            box-shadow: 0 0 20px 5px rgba(251, 191, 36, 0.6) !important;
+            transform: scale(1.5);
+            z-index: 20;
+        }
+        .line-active {
+            stroke: #fbbf24 !important;
+            stroke-width: 3px !important;
+            opacity: 1 !important;
+            filter: drop-shadow(0 0 5px #fbbf24);
+        }
+
+        /* Scrollbar custom pour les zones internes */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    </style>
+</head>
+<body class="flex flex-col h-screen text-slate-800">
+
+    <!-- Header / Progress -->
+    <header class="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-8 shadow-sm shrink-0 relative z-20">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-accent flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-500/30">
+                <i class="fa-solid fa-brain"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-slate-800">Formation LLM</h1>
+                <p class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Comprendre l'intelligence générative</p>
+            </div>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="flex-1 max-w-xl mx-8">
+            <div class="flex justify-between mb-1 text-xs font-semibold text-slate-400" id="progress-labels">
+                <!-- Généré par JS -->
+            </div>
+            <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div id="progress-bar" class="h-full bg-gradient-accent w-0 transition-all duration-500 ease-out"></div>
+            </div>
+        </div>
+
+        <div class="text-sm font-bold text-slate-400" id="slide-counter">1 / 5</div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 slide-container bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9IiNlMmU4ZjAiLz48L3N2Zz4=')]">
+        
+        <!-- SLIDE 1: INTRO -->
+        <div class="slide active" id="slide-0">
+            <div class="flex-1 flex flex-col items-center justify-center text-center max-w-4xl mx-auto">
+                <div class="animate-float mb-8">
+                    <i class="fa-solid fa-sparkles text-6xl text-blue-500 drop-shadow-lg"></i>
+                </div>
+                <h1 class="text-6xl font-extrabold mb-6 tracking-tight text-slate-900">
+                    Comment l'IA <br><span class="text-gradient">réfléchit-elle vraiment ?</span>
+                </h1>
+                <p class="text-2xl text-slate-600 mb-12 leading-relaxed">
+                    Déconstruisons la "magie" derrière les Grands Modèles de Langage (LLMs). De votre texte jusqu'à sa réponse mathématique.
+                </p>
+                <div class="glass-panel p-6 border-l-4 border-l-blue-500 flex items-start text-left gap-4">
+                    <i class="fa-solid fa-bullseye text-2xl text-blue-500 mt-1"></i>
+                    <div>
+                        <h3 class="font-bold text-lg mb-1">Objectif de cette session :</h3>
+                        <p class="text-slate-600">Comprendre les 4 piliers fondamentaux : <strong>Tokenisation, Attention, Réseaux Profonds et Génération Probabiliste</strong>.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 2: TOKENISATION -->
+        <div class="slide" id="slide-1">
+            <div class="max-w-5xl mx-auto w-full">
+                <h2 class="text-4xl font-bold mb-2"><span class="text-blue-500">1.</span> Tokenisation & Embeddings</h2>
+                <p class="text-xl text-slate-500 mb-8">L'IA ne lit pas de lettres, elle calcule des nombres.</p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
+                    <div class="glass-panel p-8">
+                        <h3 class="text-2xl font-bold mb-4 text-slate-800"><i class="fa-solid fa-scissors text-blue-500 mr-2"></i>Le Découpage</h3>
+                        <p class="text-slate-600 mb-6 text-lg">
+                            Le texte est haché en "Tokens" (mots ou fragments de mots). Chaque token reçoit un identifiant unique (ID).
+                        </p>
+                        
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-inner mb-6">
+                            <label class="block text-sm font-bold text-slate-500 mb-2 uppercase">Simulateur (Entrez un texte)</label>
+                            <input type="text" id="token-input" value="L'intelligence artificielle est fascinante" class="w-full text-lg p-3 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all">
+                        </div>
+
+                        <div id="token-output" class="flex flex-wrap gap-2 font-mono text-sm">
+                            <!-- Tokens injectés via JS -->
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-8 bg-slate-800 text-white border-none shadow-2xl">
+                        <h3 class="text-2xl font-bold mb-4 text-blue-400"><i class="fa-solid fa-cube mr-2"></i>Espace Vectoriel (Embeddings)</h3>
+                        <p class="text-slate-300 mb-6 text-lg">
+                            Ces IDs sont transformés en <strong>Vecteurs</strong> (des listes de milliers de nombres). Cela permet à l'IA de situer le "sens" des mots dans l'espace.
+                        </p>
+                        <div class="bg-slate-900 rounded-xl p-4 font-mono text-xs overflow-hidden relative">
+                            <div id="vector-output" class="text-green-400 leading-relaxed whitespace-nowrap overflow-hidden">
+                                Cliquez sur un token pour voir son vecteur...
+                            </div>
+                        </div>
+                        <div class="mt-6 p-4 bg-blue-900/30 rounded-lg border border-blue-500/30 text-sm text-blue-200">
+                            <strong>Concept clé :</strong> Des mots au sens proche (ex: "Chien" et "Chat") auront des vecteurs mathématiquement proches dans cet espace multidimensionnel.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 3: ATTENTION -->
+        <div class="slide" id="slide-2">
+            <div class="max-w-5xl mx-auto w-full">
+                <h2 class="text-4xl font-bold mb-2"><span class="text-blue-500">2.</span> L'Auto-Attention (Self-Attention)</h2>
+                <p class="text-xl text-slate-500 mb-8">La révolution des architectures "Transformers".</p>
+
+                <div class="glass-panel p-8 mb-6 relative overflow-hidden">
+                    <div class="absolute -right-10 -top-10 text-9xl text-slate-100 opacity-50 z-0"><i class="fa-solid fa-eye"></i></div>
+                    
+                    <div class="relative z-10">
+                        <h3 class="text-2xl font-bold mb-4">Comprendre le contexte</h3>
+                        <p class="text-slate-600 text-lg mb-8 max-w-3xl">
+                            Avant, les IA lisaient de gauche à droite. Aujourd'hui, <strong>chaque mot regarde simultanément tous les autres mots</strong> de la phrase pour comprendre son contexte exact via le mécanisme Q-K-V (Query, Key, Value).
+                        </p>
+
+                        <div class="bg-white rounded-2xl p-8 border-2 border-slate-100 shadow-lg mb-4">
+                            <p class="text-center text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">Testez l'attention (Survolez les mots)</p>
+                            
+                            <!-- Interactive Sentence -->
+                            <div class="text-3xl md:text-4xl font-light text-center leading-relaxed text-slate-400" id="attention-demo">
+                                <span class="attention-word" data-word="0">Le</span> 
+                                <span class="attention-word" data-word="1">juge</span> 
+                                <span class="attention-word" data-word="2">a</span> 
+                                <span class="attention-word" data-word="3">demandé</span> 
+                                <span class="attention-word" data-word="4">à</span> 
+                                <span class="attention-word" data-word="5">l'</span><span class="attention-word font-bold text-slate-700" data-word="6">avocat</span> 
+                                <span class="attention-word" data-word="7">de</span> 
+                                <span class="attention-word" data-word="8">ne</span> 
+                                <span class="attention-word" data-word="9">pas</span> 
+                                <span class="attention-word" data-word="10">manger</span> 
+                                <span class="attention-word" data-word="11">son</span> 
+                                <span class="attention-word font-bold text-slate-700" data-word="12">avocat</span> 
+                                <span class="attention-word" data-word="13">au</span> 
+                                <span class="attention-word" data-word="14">tribunal.</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-4 items-center justify-center mt-6 text-sm">
+                            <div class="flex items-center gap-2"><div class="w-4 h-4 bg-blue-200 rounded"></div> Attention forte</div>
+                            <div class="flex items-center gap-2"><div class="w-4 h-4 bg-blue-100 rounded"></div> Attention moyenne</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 4: RESEAU NEURONES -->
+        <div class="slide" id="slide-3">
+            <div class="max-w-5xl mx-auto w-full">
+                <h2 class="text-4xl font-bold mb-2"><span class="text-blue-500">3.</span> Les Couches Profondes (Raisonnement)</h2>
+                <p class="text-xl text-slate-500 mb-8">L'extraction des concepts complexes (Feed-Forward Networks).</p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                    <!-- Visualization -->
+                    <div class="lg:col-span-3 glass-panel p-8 bg-slate-900 flex flex-col justify-center relative min-h-[400px]">
+                        <div class="absolute top-4 left-4 text-slate-400 text-sm font-mono flex items-center">
+                            <i class="fa-solid fa-network-wired mr-2"></i>Milliards de paramètres
+                            <span class="ml-4 px-3 py-1 bg-blue-600/30 text-blue-300 text-xs rounded-full border border-blue-500/30 animate-pulse hidden md:inline-block">
+                                <i class="fa-solid fa-hand-pointer mr-1"></i> Survolez les nœuds à gauche
+                            </span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center w-full px-10 h-full relative" id="neural-net">
+                            <!-- SVG lines connecting nodes -->
+                            <svg class="absolute inset-0 w-full h-full pointer-events-none" style="z-index: 1;">
+                                <g id="neural-lines" stroke="rgba(96, 165, 250, 0.6)" stroke-width="1.5"></g>
+                            </svg>
+
+                            <!-- Layers generated by JS -->
+                            <div class="layer flex flex-col gap-4 z-10" id="layer-in"></div>
+                            <div class="layer flex flex-col gap-8 z-10" id="layer-h1"></div>
+                            <div class="layer flex flex-col gap-10 z-10" id="layer-h2"></div>
+                            <div class="layer flex flex-col gap-8 z-10" id="layer-h3"></div>
+                            <div class="layer flex flex-col gap-4 z-10" id="layer-out"></div>
+                        </div>
+                    </div>
+
+                    <!-- Explanations -->
+                    <div class="lg:col-span-2 flex flex-col gap-4">
+                        <div class="glass-panel p-6 border-l-4 border-l-blue-400">
+                            <h4 class="font-bold text-lg mb-2">Que se passe-t-il ici ?</h4>
+                            <p class="text-slate-600 text-sm">
+                                Une fois le contexte défini par l'Attention, l'information traverse des couches de neurones. Chaque connexion possède un "poids" (un paramètre appris durant l'entraînement).
+                            </p>
+                        </div>
+                        <div class="glass-panel p-6 border-l-4 border-l-purple-400">
+                            <h4 class="font-bold text-lg mb-2">Hiérarchie des concepts</h4>
+                            <ul class="text-sm text-slate-600 space-y-3">
+                                <li><i class="fa-solid fa-arrow-right text-purple-400 mr-2"></i><strong>Premières couches :</strong> Syntaxte, grammaire de base.</li>
+                                <li><i class="fa-solid fa-arrow-right text-purple-400 mr-2"></i><strong>Couches centrales :</strong> Faits, logique, relations sémantiques.</li>
+                                <li><i class="fa-solid fa-arrow-right text-purple-400 mr-2"></i><strong>Dernières couches :</strong> Style, ton, résolution complexe du prompt.</li>
+                            </ul>
+                        </div>
+                        <div class="glass-panel p-4 bg-orange-50 border border-orange-200">
+                            <p class="text-orange-800 text-sm font-semibold">
+                                <i class="fa-solid fa-triangle-exclamation mr-2"></i>L'IA ne "pense" pas, elle résout une immense équation mathématique pour trouver le motif conceptuel attendu.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 5: GENERATION -->
+        <div class="slide" id="slide-4">
+            <div class="max-w-5xl mx-auto w-full">
+                <h2 class="text-4xl font-bold mb-2"><span class="text-blue-500">4.</span> Génération Probabiliste</h2>
+                <p class="text-xl text-slate-500 mb-8">Prédire le mot suivant, un token à la fois (Auto-Régression).</p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Softmax / Probas -->
+                    <div class="glass-panel p-8">
+                        <h3 class="text-2xl font-bold mb-4"><i class="fa-solid fa-chart-bar text-blue-500 mr-2"></i>La fonction Softmax</h3>
+                        <p class="text-slate-600 mb-6">
+                            À la toute fin, le réseau génère un score pour <strong>chaque mot existant dans son vocabulaire</strong>. Ces scores sont convertis en pourcentages de probabilité.
+                        </p>
+                        
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                            <p class="text-sm text-slate-500 font-mono mb-4 bg-slate-50 p-2 rounded">Prompt: "Le ciel est..."</p>
+                            
+                            <div class="space-y-4" id="prob-bars">
+                                <!-- Bars -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Temperature Simulator -->
+                    <div class="glass-panel p-8 bg-gradient-to-br from-slate-50 to-blue-50">
+                        <h3 class="text-2xl font-bold mb-4"><i class="fa-solid fa-fire text-orange-500 mr-2"></i>Paramètre : La Température</h3>
+                        <p class="text-slate-600 mb-6 text-sm">
+                            L'IA ne choisit pas toujours le mot à 100%. La température ajuste la "créativité" en modifiant la répartition des probabilités avant le tirage au sort.
+                        </p>
+
+                        <div class="mb-8">
+                            <div class="flex justify-between text-sm font-bold text-slate-500 mb-2">
+                                <span>0.0 (Analytique / Prédictible)</span>
+                                <span id="temp-val-display" class="text-blue-600 text-lg">0.7</span>
+                                <span>2.0 (Créatif / Aléatoire)</span>
+                            </div>
+                            <input type="range" id="temp-slider" min="0" max="2" step="0.1" value="0.7" class="w-full">
+                        </div>
+
+                        <div class="bg-white p-6 rounded-xl border-2 border-blue-100 shadow-md text-center">
+                            <p class="text-sm font-bold text-slate-400 uppercase mb-2">Mot sélectionné par le modèle</p>
+                            <div id="selected-word" class="text-4xl font-extrabold text-gradient py-4 transition-all duration-300 transform scale-100">
+                                bleu
+                            </div>
+                            <p id="temp-explanation" class="text-sm text-slate-500 mt-2">Température modérée : Choix logique mais permet des variations subtiles.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer Controls -->
+    <footer class="h-20 bg-white border-t border-slate-200 flex items-center justify-between px-8 shrink-0 relative z-20">
+        <div class="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] text-slate-400/70 font-medium tracking-wide">
+            © 2026 Houssem Eddine Lassoued - Tous droits réservés
+        </div>
+        <button id="btn-prev" class="px-6 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+            <i class="fa-solid fa-arrow-left mr-2"></i> Précédent
+        </button>
+        
+        <div class="flex gap-2" id="dots-container">
+            <!-- Dots générés en JS -->
+        </div>
+
+        <button id="btn-next" class="px-6 py-3 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-all transform hover:-translate-y-1 disabled:opacity-30 disabled:cursor-not-allowed">
+            Suivant <i class="fa-solid fa-arrow-right ml-2"></i>
+        </button>
+    </footer>
+
+    <script>
+        // --- LOGIQUE DE NAVIGATION DES SLIDES ---
+        const slides = document.querySelectorAll('.slide');
+        const btnNext = document.getElementById('btn-next');
+        const btnPrev = document.getElementById('btn-prev');
+        const progressBar = document.getElementById('progress-bar');
+        const slideCounter = document.getElementById('slide-counter');
+        const dotsContainer = document.getElementById('dots-container');
+        const progressLabelsContainer = document.getElementById('progress-labels');
+        
+        let currentSlide = 0;
+        const totalSlides = slides.length;
+        const slideTitles = ["Introduction", "Tokenisation", "Attention", "Couches Profondes", "Génération"];
+
+        function initNavigation() {
+            // Créer les points de navigation et labels de progression
+            slideTitles.forEach((title, i) => {
+                // Dots
+                const dot = document.createElement('button');
+                dot.className = `w-3 h-3 rounded-full transition-colors ${i === 0 ? 'bg-blue-600' : 'bg-slate-300'}`;
+                dot.onclick = () => goToSlide(i);
+                dotsContainer.appendChild(dot);
+
+                // Labels
+                const label = document.createElement('span');
+                label.innerText = title;
+                label.className = `transition-opacity duration-300 ${i === 0 ? 'opacity-100 text-blue-600' : 'opacity-50 hidden md:block'}`;
+                progressLabelsContainer.appendChild(label);
+            });
+            updateUI();
+        }
+
+        function updateUI() {
+            // Update Slides
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active', 'previous');
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                } else if (index < currentSlide) {
+                    slide.classList.add('previous');
+                }
+            });
+
+            // Update Buttons
+            btnPrev.disabled = currentSlide === 0;
+            if (currentSlide === totalSlides - 1) {
+                btnNext.innerHTML = 'Terminer <i class="fa-solid fa-check ml-2"></i>';
+                btnNext.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                btnNext.classList.add('bg-green-600', 'hover:bg-green-700', 'shadow-green-500/30');
+            } else {
+                btnNext.innerHTML = 'Suivant <i class="fa-solid fa-arrow-right ml-2"></i>';
+                btnNext.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                btnNext.classList.remove('bg-green-600', 'hover:bg-green-700', 'shadow-green-500/30');
+            }
+
+            // Update Progress & Counter
+            const progressPct = ((currentSlide + 1) / totalSlides) * 100;
+            progressBar.style.width = `${progressPct}%`;
+            slideCounter.innerText = `${currentSlide + 1} / ${totalSlides}`;
+
+            // Update Dots & Labels
+            Array.from(dotsContainer.children).forEach((dot, i) => {
+                dot.className = `w-3 h-3 rounded-full transition-colors ${i === currentSlide ? 'bg-blue-600' : 'bg-slate-300'}`;
+            });
+            
+            Array.from(progressLabelsContainer.children).forEach((label, i) => {
+                label.className = `transition-opacity duration-300 ${i === currentSlide ? 'opacity-100 text-blue-600 font-bold' : 'opacity-50 hidden md:block'}`;
+            });
+
+            // Trigger layer animations on slide 3
+            if(currentSlide === 3) drawNeuralLines();
+        }
+
+        function goToSlide(n) {
+            if (n >= 0 && n < totalSlides) {
+                currentSlide = n;
+                updateUI();
+            }
+        }
+
+        btnNext.addEventListener('click', () => {
+            if(currentSlide === totalSlides -1) alert("Fin de la formation interactive !");
+            else goToSlide(currentSlide + 1);
+        });
+        btnPrev.addEventListener('click', () => goToSlide(currentSlide - 1));
+
+        // --- LOGIQUE SLIDE 2 : TOKENISATION ---
+        const tokenInput = document.getElementById('token-input');
+        const tokenOutput = document.getElementById('token-output');
+        const vectorOutput = document.getElementById('vector-output');
+
+        function tokenizeAndRender() {
+            const text = tokenInput.value || " ";
+            // Simulation simple: découper par espaces et apostrophes, et par syllabes pour les mots longs
+            let chunks = text.split(/([ '.,!?])/).filter(c => c.trim().length > 0 || c === "'");
+            
+            tokenOutput.innerHTML = '';
+            chunks.forEach(chunk => {
+                const badge = document.createElement('span');
+                const tokenId = Math.floor(Math.random() * 80000) + 1000; // Fake ID
+                
+                // Styling the badge
+                badge.className = 'token-badge px-3 py-1 rounded bg-blue-100 text-blue-800 border border-blue-200 shadow-sm relative group select-none flex flex-col items-center';
+                badge.innerHTML = `
+                    <span class="font-bold text-base mb-1">${chunk}</span>
+                    <span class="text-[10px] text-blue-500 opacity-70">ID:${tokenId}</span>
+                `;
+
+                // Vector simulation on click
+                badge.onclick = () => {
+                    // Generate fake vector numbers
+                    let vectors = Array.from({length: 24}, () => (Math.random() * 2 - 1).toFixed(4));
+                    vectorOutput.innerHTML = `
+                        <div class="text-white mb-2 font-bold bg-blue-600 inline-block px-2 rounded">Token: "${chunk}"</div><br>
+                        Vecteur [768 dimensions] = <br>
+                        [ <span class="text-blue-400">${vectors.slice(0,4).join(', ')}</span>, <br>
+                          &nbsp;&nbsp;<span class="text-purple-400">${vectors.slice(4,8).join(', ')}</span>, <br>
+                          &nbsp;&nbsp;<span class="text-pink-400">${vectors.slice(8,12).join(', ')}</span>, <br>
+                          &nbsp;&nbsp;... ]
+                    `;
+                };
+
+                tokenOutput.appendChild(badge);
+            });
+        }
+        tokenInput.addEventListener('input', tokenizeAndRender);
+
+
+        // --- LOGIQUE SLIDE 3 : ATTENTION ---
+        const attentionWords = document.querySelectorAll('.attention-word');
+        
+        // Matrice d'attention simplifiée (Target -> [Related High, Related Med])
+        const attentionMap = {
+            1: { high: [3, 14], med: [2, 7, 0] },     // Juge -> demandé, tribunal
+            6: { high: [14, 1, 3], med: [5, 7] },     // avocat (homme) -> tribunal, juge, demandé
+            10: { high: [12, 9, 8], med: [7] },       // manger -> avocat (fruit), pas, ne
+            12: { high: [10], med: [11, 13] },        // avocat (fruit) -> manger
+            14: { high: [1, 6], med: [13] }           // tribunal -> juge, avocat(homme)
+        };
+
+        attentionWords.forEach(word => {
+            word.addEventListener('mouseenter', () => {
+                const id = parseInt(word.getAttribute('data-word'));
+                
+                // Réinitialiser
+                attentionWords.forEach(w => w.classList.remove('active-target', 'related-high', 'related-med', 'opacity-30'));
+                
+                if(attentionMap[id]) {
+                    word.classList.add('active-target');
+                    // Atténuer les autres
+                    attentionWords.forEach(w => { if(w !== word) w.classList.add('opacity-30'); });
+                    
+                    // Surligner les relations
+                    attentionMap[id].high.forEach(targetId => {
+                        document.querySelector(`.attention-word[data-word="${targetId}"]`).classList.add('related-high');
+                        document.querySelector(`.attention-word[data-word="${targetId}"]`).classList.remove('opacity-30');
+                    });
+                    attentionMap[id].med.forEach(targetId => {
+                        document.querySelector(`.attention-word[data-word="${targetId}"]`).classList.add('related-med');
+                        document.querySelector(`.attention-word[data-word="${targetId}"]`).classList.remove('opacity-30');
+                    });
+                } else {
+                    word.classList.add('active-target');
+                }
+            });
+
+            word.addEventListener('mouseleave', () => {
+                attentionWords.forEach(w => w.classList.remove('active-target', 'related-high', 'related-med', 'opacity-30'));
+            });
+        });
+
+
+        // --- LOGIQUE SLIDE 4 : RESEAU DE NEURONES ---
+        let neuralGraph = new Map();
+        let animationTimeouts = [];
+
+        function createNodes(containerId, count, isOutput=false) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            for(let i=0; i<count; i++) {
+                const node = document.createElement('div');
+                node.className = `w-4 h-4 rounded-full ${isOutput ? 'bg-purple-500 shadow-[0_0_15px_#a855f7]' : 'bg-blue-500 shadow-[0_0_10px_#3b82f6]'} relative node-element transition-all duration-300 cursor-pointer hover:scale-125`;
+                container.appendChild(node);
+            }
+        }
+
+        createNodes('layer-in', 8);
+        createNodes('layer-h1', 12);
+        createNodes('layer-h2', 14);
+        createNodes('layer-h3', 12);
+        createNodes('layer-out', 4, true);
+
+        function triggerPropagationEvent(e) {
+            triggerPropagation(e.target);
+        }
+
+        function drawNeuralLines() {
+            const svg = document.getElementById('neural-lines');
+            svg.innerHTML = ''; // clear
+            neuralGraph.clear();
+            
+            const layers = [
+                document.getElementById('layer-in').children,
+                document.getElementById('layer-h1').children,
+                document.getElementById('layer-h2').children,
+                document.getElementById('layer-h3').children,
+                document.getElementById('layer-out').children
+            ];
+
+            const containerRect = document.getElementById('neural-net').getBoundingClientRect();
+
+            // Ne dessiner qu'un sous-ensemble aléatoire de lignes pour la performance et le visuel
+            for(let i=0; i<layers.length - 1; i++) {
+                const currentLayer = Array.from(layers[i]);
+                const nextLayer = Array.from(layers[i+1]);
+
+                currentLayer.forEach(startNode => {
+                    const startRect = startNode.getBoundingClientRect();
+                    const startX = startRect.left - containerRect.left + startRect.width/2;
+                    const startY = startRect.top - containerRect.top + startRect.height/2;
+
+                    if (!neuralGraph.has(startNode)) {
+                        neuralGraph.set(startNode, []);
+                    }
+
+                    nextLayer.forEach(endNode => {
+                        // Dessiner ~30% des connexions pour ne pas surcharger mais rester visible
+                        if(Math.random() > 0.7) {
+                            const endRect = endNode.getBoundingClientRect();
+                            const endX = endRect.left - containerRect.left + endRect.width/2;
+                            const endY = endRect.top - containerRect.top + endRect.height/2;
+
+                            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                            line.setAttribute("x1", startX);
+                            line.setAttribute("y1", startY);
+                            line.setAttribute("x2", endX);
+                            line.setAttribute("y2", endY);
+                            // Vary opacity for visual depth (plus visible)
+                            line.style.opacity = Math.random() * 0.6 + 0.4;
+                            line.classList.add('transition-all', 'duration-300');
+                            svg.appendChild(line);
+
+                            // Sauvegarder la connexion logique
+                            neuralGraph.get(startNode).push({ line: line, targetNode: endNode });
+                        }
+                    });
+                });
+            }
+
+            setupInteractivity();
+        }
+
+        function setupInteractivity() {
+            const inputNodes = document.getElementById('layer-in').children;
+            Array.from(inputNodes).forEach(node => {
+                node.removeEventListener('mouseenter', triggerPropagationEvent);
+                node.addEventListener('mouseenter', triggerPropagationEvent);
+            });
+        }
+
+        function triggerPropagation(startNode) {
+            // Nettoyer les animations précédentes
+            animationTimeouts.forEach(clearTimeout);
+            animationTimeouts = [];
+
+            // Réinitialiser l'état visuel
+            document.querySelectorAll('.node-active').forEach(el => el.classList.remove('node-active'));
+            document.querySelectorAll('.line-active').forEach(el => el.classList.remove('line-active'));
+
+            // Démarrer la propagation
+            let currentActiveNodes = [startNode];
+            startNode.classList.add('node-active');
+
+            for(let i=0; i<4; i++) {
+                let delay = (i + 1) * 200; // Délai de 200ms par couche pour créer le mouvement
+                let timeout = setTimeout(() => {
+                    let nextActiveNodes = [];
+
+                    currentActiveNodes.forEach(node => {
+                        let edges = neuralGraph.get(node);
+                        if(edges && edges.length > 0) {
+                            // Choisir 1 à 3 chemins valides au hasard pour simuler une "pensée" spécifique
+                            let shuffledEdges = edges.sort(() => 0.5 - Math.random());
+                            let edgesToActivate = shuffledEdges.slice(0, Math.floor(Math.random() * 2) + 1);
+
+                            edgesToActivate.forEach(edge => {
+                                edge.line.classList.add('line-active');
+                                edge.targetNode.classList.add('node-active');
+                                nextActiveNodes.push(edge.targetNode);
+                            });
+                        }
+                    });
+                    currentActiveNodes = nextActiveNodes;
+                }, delay);
+                animationTimeouts.push(timeout);
+            }
+        }
+
+        // Redessiner au resize
+        window.addEventListener('resize', () => {
+            if(currentSlide === 3) drawNeuralLines();
+        });
+
+
+        // --- LOGIQUE SLIDE 5 : GENERATION & TEMPERATURE ---
+        const wordsProbas = [
+            { word: "bleu", baseProb: 85 },
+            { word: "nuageux", baseProb: 10 },
+            { word: "gris", baseProb: 4 },
+            { word: "magnifique", baseProb: 0.9 },
+            { word: "vanille", baseProb: 0.1 }
+        ];
+
+        const tempSlider = document.getElementById('temp-slider');
+        const tempDisplay = document.getElementById('temp-val-display');
+        const probBarsContainer = document.getElementById('prob-bars');
+        const selectedWordEl = document.getElementById('selected-word');
+        const tempExplanation = document.getElementById('temp-explanation');
+
+        function updateProbabilities(temperature) {
+            tempDisplay.innerText = temperature.toFixed(1);
+            
+            // Calcul simulé de softmax avec température (très simplifié pour le frontend)
+            // prob = exp(log(baseProb) / temp) ... normalisé
+            let tempAdj = temperature;
+            if (tempAdj < 0.1) tempAdj = 0.1; // Éviter division par 0
+
+            let adjustedProbas = wordsProbas.map(w => {
+                // Logique factice pour démontrer l'effet visuellement
+                let val = Math.pow(w.baseProb, 1 / tempAdj); 
+                return { word: w.word, score: val };
+            });
+
+            // Normalisation à 100%
+            let sum = adjustedProbas.reduce((acc, w) => acc + w.score, 0);
+            adjustedProbas = adjustedProbas.map(w => ({
+                word: w.word,
+                prob: ((w.score / sum) * 100).toFixed(1)
+            }));
+
+            // Tri pour affichage
+            adjustedProbas.sort((a,b) => b.prob - a.prob);
+
+            // Mise à jour de l'UI des barres
+            probBarsContainer.innerHTML = '';
+            adjustedProbas.forEach((item, i) => {
+                const colorClass = i === 0 ? 'bg-blue-500' : (i < 3 ? 'bg-slate-400' : 'bg-slate-200');
+                const textClass = i === 0 ? 'text-blue-700 font-bold' : 'text-slate-600';
+                
+                probBarsContainer.innerHTML += `
+                    <div class="flex items-center gap-3">
+                        <span class="w-24 text-right ${textClass}">${item.word}</span>
+                        <div class="flex-1 h-4 bg-slate-100 rounded-full overflow-hidden">
+                            <div class="h-full ${colorClass} transition-all duration-500" style="width: ${item.prob}%"></div>
+                        </div>
+                        <span class="w-12 text-left text-xs font-mono text-slate-500">${item.prob}%</span>
+                    </div>
+                `;
+            });
+
+            // Sélection du mot (Simulée)
+            let chosenWord = "";
+            let animClass = "";
+            
+            if (temperature <= 0.2) {
+                chosenWord = adjustedProbas[0].word;
+                tempExplanation.innerText = "Température Basse (0.0 - 0.2) : Mode Analytique. L'IA choisit toujours le mot le plus logique. Répétitif mais précis.";
+                animClass = "text-blue-600";
+            } else if (temperature <= 0.8) {
+                // Pour la démo, on prend souvent le 1er, parfois le 2eme
+                chosenWord = Math.random() > 0.3 ? adjustedProbas[0].word : adjustedProbas[1].word;
+                tempExplanation.innerText = "Température Modérée (0.3 - 0.8) : Mode Standard. Bon équilibre entre logique et fluidité naturelle (cas des LLMs par défaut).";
+                animClass = "text-purple-600";
+            } else {
+                // Aléatoire parmi le top
+                let rand = Math.random() * 100;
+                let cumul = 0;
+                for(let item of adjustedProbas) {
+                    cumul += parseFloat(item.prob);
+                    if(rand <= cumul) { chosenWord = item.word; break; }
+                }
+                if(!chosenWord) chosenWord = adjustedProbas[0].word;
+                
+                tempExplanation.innerText = "Température Haute (> 0.8) : Mode Créatif/Aléatoire. L'IA prend des risques. Parfait pour la poésie, dangereux pour le code (Hallucinations).";
+                animClass = "text-orange-500";
+            }
+
+            // Animation du mot choisi
+            selectedWordEl.style.transform = 'scale(0.8)';
+            selectedWordEl.style.opacity = '0.5';
+            
+            setTimeout(() => {
+                selectedWordEl.className = `text-4xl font-extrabold py-4 transition-all duration-300 transform scale-110 ${animClass}`;
+                selectedWordEl.innerText = chosenWord;
+                setTimeout(() => selectedWordEl.style.transform = 'scale(1)', 150);
+            }, 150);
+        }
+
+        tempSlider.addEventListener('input', (e) => updateProbabilities(parseFloat(e.target.value)));
+
+
+        // Initialisation globale
+        initNavigation();
+        tokenizeAndRender();
+        updateProbabilities(0.7);
+
+    </script>
+</body>
+</html>
