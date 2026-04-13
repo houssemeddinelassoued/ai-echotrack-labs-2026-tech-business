@@ -91,6 +91,7 @@
         </header>
 
         <div class="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12" id="main-content">
+            <!-- Vue introduction (modules) -->
             <div id="intro-view" class="max-w-4xl mx-auto space-y-8 animate-fade-in">
                 <div class="bg-gradient-to-br from-eco-50 to-blue-50 border border-stone-200 rounded-2xl p-8 shadow-sm">
                     <h1 class="text-5xl font-extrabold text-slate-900 mb-2 tracking-tight">🌱 EcoTrack & IA</h1>
@@ -154,6 +155,10 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Vue modules (contenu dynamique) -->
+            <div id="module-view" class="max-w-6xl mx-auto space-y-6 hidden"></div>
         </div>
     </main>
 
@@ -504,19 +509,25 @@ Action : En appliquant strictement cette Skill, génère le fichier "docker-comp
             view.innerHTML = ''; 
 
             const isBiz = mod.target === 'Biz';
-            const themeColor = isBiz ? 'biz' : 'eco';
+            
+            // Couleurs de thème (statiques pour Tailwind)
+            const themeStyles = {
+                eco: { borderLight: 'border-eco-200', textPrimary: 'text-eco-600', bgLight: 'bg-eco-50', borderMedium: 'border-eco-400', bgMedium: 'bg-eco-500', textDark: 'text-eco-900' },
+                biz: { borderLight: 'border-biz-200', textPrimary: 'text-biz-600', bgLight: 'bg-biz-100', borderMedium: 'border-biz-400', bgMedium: 'bg-biz-500', textDark: 'text-biz-900' }
+            };
+            const theme = themeStyles[isBiz ? 'biz' : 'eco'];
 
             const header = document.createElement('div');
-            header.className = `bg-white border border-${themeColor}-200 p-8 rounded-2xl mb-8 shadow-sm`;
+            header.className = `bg-white border ${theme.borderLight} p-8 rounded-2xl mb-8 shadow-sm`;
             header.innerHTML = `
                 <div class="flex items-center gap-3 mb-3">
                     <span class="text-3xl">${mod.icon}</span>
                     <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">${mod.title}</h2>
                 </div>
-                ${mod.subtitle ? `<p class="text-${themeColor}-600 font-bold mb-4 uppercase tracking-wide text-sm">${mod.subtitle}</p>` : ''}
-                
+                ${mod.subtitle ? `<p class="${theme.textPrimary} font-bold mb-4 uppercase tracking-wide text-sm">${mod.subtitle}</p>` : ''}
+
                 ${mod.image ? `<img src="${mod.image}" alt="Illustration ${mod.title}" class="w-full h-auto rounded-xl mb-6 shadow-md border border-stone-200 object-cover mt-4">` : ''}
-                
+
                 <p class="text-slate-600 leading-relaxed text-lg">${mod.intro}</p>
             `;
             view.appendChild(header);
@@ -524,8 +535,8 @@ Action : En appliquant strictement cette Skill, génère le fichier "docker-comp
             mod.labs.forEach((lab) => {
                 const isCompleted = state.completedLabs.includes(lab.id);
                 const labCard = document.createElement('div');
-                labCard.className = `bg-white border rounded-2xl overflow-hidden transition-all duration-300 ${isCompleted ? `border-${themeColor}-400 shadow-md` : 'border-stone-200 shadow-sm'}`;
-                
+                labCard.className = `bg-white border rounded-2xl overflow-hidden transition-all duration-300 ${isCompleted ? `${theme.borderMedium} shadow-md` : 'border-stone-200 shadow-sm'}`;
+
                 labCard.innerHTML = `
                     <div class="p-6 md:p-8 border-b border-stone-100 flex flex-col md:flex-row justify-between items-start gap-4">
                         <div class="flex-1">
@@ -535,7 +546,7 @@ Action : En appliquant strictement cette Skill, génère le fichier "docker-comp
                             </div>
                             <h3 class="text-xl font-extrabold text-slate-900 mb-2">${lab.title}</h3>
                             <p class="text-slate-600 mb-4 font-medium">${lab.objective}</p>
-                            
+
                             ${lab.astuce ? `
                             <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3 shadow-sm">
                                 <span class="text-amber-500 text-xl flex-shrink-0">💡</span>
@@ -545,28 +556,17 @@ Action : En appliquant strictement cette Skill, génère le fichier "docker-comp
                                 </div>
                             </div>
                             ` : ''}
-                            
+
                         </div>
                         <button onclick="toggleLab('${lab.id}')" class="flex-shrink-0 w-12 h-12 rounded-full border-2 flex items-center justify-center transition-colors text-lg
-                            ${isCompleted ? `bg-${themeColor}-500 border-${themeColor}-500 text-white` : `border-stone-300 text-transparent hover:border-${themeColor}-400`}">
+                            ${isCompleted ? `${theme.bgMedium} ${theme.borderMedium} text-white` : 'border-stone-300 text-transparent hover:border-stone-400'}">
                             ✔
                         </button>
                     </div>
                     <div class="p-6 md:p-8 bg-stone-50">
-                        <div class="flex justify-between items-center mb-3">
+                        <div class="flex justify-between items-center mb-3">    
                             <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Prompt à copier</span>
-                            <button onclick="copyToClipboard(this, '${lab.id}')" class="text-sm text-${themeColor}-700 hover:text-${themeColor}-900 font-bold flex items-center gap-1 transition-colors bg-white px-3 py-1 rounded-md border border-stone-200 shadow-sm">
-                                <span>📋</span> Copier
-                            </button>
-                        </div>
-                        <pre class="bg-slate-900 text-stone-100 p-5 rounded-xl text-sm overflow-x-auto whitespace-pre-wrap font-mono leading-relaxed shadow-inner border border-slate-800">${lab.prompt}</pre>
-                    </div>
-                `;
-                view.appendChild(labCard);
-            });
-
-            renderSidebar();
-            if(window.innerWidth < 768) toggleSidebar();
+                            <button onclick="copyToClipboard(this, '${lab.id}')" class="text-sm ${theme.textPrimary} hover:font-bold font-bold flex items-center gap-1 transition-colors bg-white px-3 py-1 rounded-md border border-stone-200 shadow-sm">
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
