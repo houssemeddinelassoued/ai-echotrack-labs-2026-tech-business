@@ -505,7 +505,7 @@
         }
 
         btnNext.addEventListener('click', () => {
-            if(currentSlide === totalSlides -1) alert("Fin de la formation interactive !");
+            if(currentSlide === totalSlides -1) window.location.href = 'index.html';
             else goToSlide(currentSlide + 1);
         });
         btnPrev.addEventListener('click', () => goToSlide(currentSlide - 1));
