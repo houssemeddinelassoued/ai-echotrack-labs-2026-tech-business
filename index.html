@@ -567,6 +567,17 @@ Action : En appliquant strictement cette Skill, génère le fichier "docker-comp
                         <div class="flex justify-between items-center mb-3">    
                             <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Prompt à copier</span>
                             <button onclick="copyToClipboard(this, '${lab.id}')" class="text-sm ${theme.textPrimary} hover:font-bold font-bold flex items-center gap-1 transition-colors bg-white px-3 py-1 rounded-md border border-stone-200 shadow-sm">
+                                <span>📋</span> Copier
+                            </button>
+                        </div>
+                        <pre class="bg-slate-900 text-stone-100 p-5 rounded-xl text-sm overflow-x-auto whitespace-pre-wrap font-mono leading-relaxed shadow-inner border border-slate-800">${lab.prompt}</pre>
+                    </div>
+                `;
+                view.appendChild(labCard);
+            });
+
+            renderSidebar();
+            if(window.innerWidth < 768) toggleSidebar();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
